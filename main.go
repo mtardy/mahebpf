@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/mtardy/mahebpf/internal/cmd"
-)
+import "github.com/mtardy/mahebpf/internal/cmd"
 
 func main() {
 	cmd.Execute()

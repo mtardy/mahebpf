@@ -12,32 +12,23 @@ import (
 	"github.com/mtardy/mahebpf/pkg/instruction"
 )
 
-type ProgramInstruction struct {
-	Instruction instruction.Instruction
-	Number      int
-}
-
-type Program struct {
-	Instructions []ProgramInstruction
-}
+type Program []instruction.Instruction
 
 func NewProgram() Program {
 	return Program{}
 }
 
 type DisassembledProgram struct {
-	InsNumber    int
 	Instruction  instruction.Instruction
 	Disassembled string
 }
 
 func (p Program) Disassemble() []DisassembledProgram {
 	out := []DisassembledProgram{}
-	for _, ins := range p.Instructions {
+	for _, ins := range p {
 		out = append(out, DisassembledProgram{
-			InsNumber:    ins.Number,
-			Instruction:  ins.Instruction,
-			Disassembled: ins.Instruction.Disassemble(),
+			Instruction:  ins,
+			Disassembled: ins.Disassemble(),
 		})
 	}
 	return out
@@ -45,29 +36,31 @@ func (p Program) Disassemble() []DisassembledProgram {
 
 func parseBytes(data []byte, width int, parser func(data []byte, index, width int) (uint64, error)) (*Program, error) {
 	prog := NewProgram()
-	for i, j := 0, 0; i+width <= len(data); i, j = i+width, j+1 {
+	for i := 0; i+width <= len(data); i = i + width {
 		parsedInstruction, err := parser(data, i, width)
 		if err != nil {
 			return nil, err
 		}
 		ins := instruction.NewInstruction(parsedInstruction)
-		instructionNumber := j
+
+		var pseudoIns uint64
 		if ins.NeedPseudoInstruction() {
-			i = i + width
-			j++
 			if i+width >= len(data) {
 				return nil, fmt.Errorf("ins 0x%016x needs a pseudo instruction and it's not available", ins.Basic)
 			}
-			pseudoIns, err := parser(data, i, width)
+			i = i + width
+			pseudoIns, err = parser(data, i, width)
 			if err != nil {
 				return nil, err
 			}
 			ins.AddPseudoInstruction(pseudoIns)
 		}
-		prog.Instructions = append(prog.Instructions, ProgramInstruction{
-			Instruction: ins,
-			Number:      instructionNumber,
-		})
+
+		prog = append(prog, ins)
+
+		if ins.NeedPseudoInstruction() {
+			prog = append(prog, instruction.NewPseudoInstruction(pseudoIns))
+		}
 	}
 	return &prog, nil
 }
