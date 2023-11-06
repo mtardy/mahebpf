@@ -141,17 +141,13 @@ func BenchmarkDisassemble(b *testing.B) {
 	prog := NewProgram()
 	for i := 0; i < len(testProg); i++ {
 		ins := instruction.NewInstruction(testProg[i])
-		insNumber := i
 		if ins.NeedPseudoInstruction() {
 			if i+1 >= len(testProg) {
 				b.Errorf("ins 0x%016x needs a pseudo instruction and it's not available", ins.Basic)
 			}
 			ins.AddPseudoInstruction(testProg[i])
 		}
-		prog.Instructions = append(prog.Instructions, ProgramInstruction{
-			Instruction: ins,
-			Number:      insNumber,
-		})
+		prog = append(prog, ins)
 	}
 
 	b.ResetTimer()

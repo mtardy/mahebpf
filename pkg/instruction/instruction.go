@@ -418,6 +418,7 @@ func (ins Instruction) Imm64() Imm64 {
 type Instruction struct {
 	Basic      uint64
 	Pseudo     uint64
+	IsPseudo   bool
 	Extended64 bool
 }
 
@@ -431,6 +432,14 @@ func (ins Instruction) String() string {
 func NewInstruction(ins uint64) Instruction {
 	return Instruction{
 		Basic: ins,
+	}
+}
+
+// This is often used as a placeholder
+func NewPseudoInstruction(ins uint64) Instruction {
+	return Instruction{
+		Pseudo:   ins,
+		IsPseudo: true,
 	}
 }
 
